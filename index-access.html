@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulaire de Note de Frais</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 50px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        .form-container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+        }
+
+        .form-group button {
+            background-color: #28a745;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .form-group button:hover {
+            background-color: #218838;
+        }
+
+        .form-group.required label:after {
+            content: " *";
+            color: red;
+        }
+
+        .error {
+            border-color: red;
+        }
+
+        .error-message {
+            color: red;
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .error-container {
+            display: none;
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="form-container" role="form" aria-labelledby="form-title">
+        <h2 id="form-title">Formulaire de Note de Frais</h2>
+        <div class="error-container" id="error-container" aria-hidden="true" aria-labelledby="error-title">
+            <h2 tabindex="0" id="error-title">Votre saisie comporte des erreurs</h2>
+            <ul class="error-message" id="error-message" role="alert"></ul>
+        </div>
+        <form id="expense-form" action="/submit-expense" method="post" novalidate>
+            <div class="form-group required">
+                <label for="date">Date :</label>
+                <input type="date" id="date" name="date" required aria-required="true" aria-describedby="date-error">
+                <span id="date-error" class="visually-hidden"></span>
+            </div>
+            <div class="form-group required">
+                <label for="description">Description :</label>
+                <textarea id="description" name="description" rows="4" required aria-required="true"
+                    aria-describedby="description-error"></textarea>
+                <span id="description-error" class="visually-hidden"></span>
+            </div>
+            <div class="form-group required">
+                <label for="amount">Montant (€) :</label>
+                <input type="number" id="amount" name="amount" step="0.01" required aria-required="true"
+                    aria-describedby="amount-error">
+                <span id="amount-error" class="visually-hidden"></span>
+            </div>
+            <div class="form-group required">
+                <label for="category">Catégorie :</label>
+                <select id="category" name="category" required aria-required="true" aria-describedby="category-error">
+                    <option value="">Sélectionnez une catégorie</option>
+                    <option value="transport">Transport</option>
+                    <option value="repas">Repas</option>
+                    <option value="hébergement">Hébergement</option>
+                    <option value="divers">Divers</option>
+                </select>
+                <span id="category-error" class="visually-hidden"></span>
+            </div>
+            <div class="form-group">
+                <button type="submit">Soumettre</button>
+            </div>
+        </form>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('expense-form');
+            const errorContainer = document.getElementById('error-container');
+            const errorMessage = document.getElementById('error-message');
+            const errorTitle = document.getElementById('error-title');
+
+            const errorMessages = {
+                'date': 'Le champ "Date" est obligatoire.',
+                'description': 'Le champ "Description" est obligatoire.',
+                'amount': 'Le champ "Montant (€)" est obligatoire.',
+                'category': 'Le champ "Catégorie" est obligatoire.'
+            };
+
+            const fields = form.querySelectorAll('input[required], textarea[required], select[required]');
+
+            const checkField = (field) => {
+                const errorField = document.getElementById(`${field.id}-error`);
+                if (field.value.trim()) {
+                    field.classList.remove('error');
+                    const errorText = errorMessages[field.id];
+                    const errorItem = Array.from(errorMessage.children).find(item => item.textContent === errorText);
+                    if (errorItem) {
+                        errorMessage.removeChild(errorItem);
+                    }
+                    errorField.textContent = '';
+                    if (!errorMessage.children.length) {
+                        errorContainer.style.display = 'none';
+                        errorContainer.setAttribute("aria-hidden", "true");
+                    }
+                }
+            };
+
+            fields.forEach(field => {
+                field.addEventListener('input', () => checkField(field));
+            });
+
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                errorMessage.innerHTML = '';
+                errorContainer.style.display = 'none';
+                errorContainer.setAttribute("aria-hidden", "true");
+
+                let hasError = false;
+
+                fields.forEach(field => {
+                    field.classList.remove('error');
+                    const errorField = document.getElementById(`${field.id}-error`);
+                    if (!field.value.trim()) {
+                        const errorText = errorMessages[field.id];
+                        const li = document.createElement('li');
+                        li.textContent = errorText;
+                        errorMessage.appendChild(li);
+                        field.classList.add('error');
+                        errorField.textContent = errorText;
+                        hasError = true;
+                    } else {
+                        errorField.textContent = '';
+                    }
+                });
+
+                if (hasError) {
+                    errorContainer.style.display = 'block';
+                    errorContainer.setAttribute("aria-hidden", "false");
+                    errorTitle.focus();
+                } else {
+                    form.submit();
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
